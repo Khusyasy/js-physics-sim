@@ -118,4 +118,27 @@ function loop() {
   requestAnimationFrame(loop);
 }
 
+canvas.addEventListener('click', (e) => {
+  let x = e.clientX;
+  let y = e.clientY;
+  let nearestX = Infinity;
+  let nearestY = Infinity;
+  let nearest = undefined;
+
+  balls.forEach((ball) => {
+    let diffX = Math.abs(x - ball.x);
+    let diffY = Math.abs(y - ball.y);
+    if (diffX < nearestX && diffY < nearestY) {
+      nearestX = diffX;
+      nearestY = diffY;
+      nearest = ball;
+    }
+  });
+
+  if (nearest) {
+    nearest.vx = random(-10, 10);
+    nearest.vy = random(-10, 10);
+  }
+});
+
 loop();
