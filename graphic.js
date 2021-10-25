@@ -26,14 +26,19 @@ class Ball {
     this.vy = vy;
     this.color = color;
     this.r = r;
+    this.collide = false;
   }
   draw() {
     ctx.beginPath();
-    ctx.fillStyle = this.color;
+    if (this.collide) ctx.fillStyle = 'red';
+    else ctx.fillStyle = this.color;
     ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
     ctx.fill();
+    this.collide = false;
   }
   update(ELASPED_TIME) {
+    this.vy += GRAVITY_CONSTANT * ELASPED_TIME;
+
     if (this.x + this.r >= width) {
       this.vx = -this.vx * RESTITUTION_CONSTANT;
       this.x = width - this.r;
@@ -54,21 +59,21 @@ class Ball {
       this.y = this.r;
     }
 
-    this.vy += GRAVITY_CONSTANT * ELASPED_TIME;
-
-    this.x = lerp(this.x, this.x + this.vx, ELASPED_TIME);
-    this.y = lerp(this.y, this.y + this.vy, ELASPED_TIME);
+    this.x += this.vx * ELASPED_TIME;
+    this.y += this.vy * ELASPED_TIME;
     this.vx = lerp(this.vx, 0, FRICTION_CONSTANT);
     this.vy = lerp(this.vy, 0, FRICTION_CONSTANT);
   }
   collisionDetect() {
     for (let i = 0; i < balls.length; i++) {
-      if (!(this === balls[i])) {
+      if (this !== balls[i]) {
         const dx = this.x - balls[i].x;
         const dy = this.y - balls[i].y;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        if (distance < this.r + balls[i].r) {
+        if (distance <= this.r + balls[i].r) {
+          this.collide = true;
+          balls[i].collide = true;
           let vCollision = { x: balls[i].x - this.x, y: balls[i].y - this.y };
           let vCollisionNorm = {
             x: vCollision.x / distance,
@@ -82,7 +87,7 @@ class Ball {
           let speed =
             vRelativeVelocity.x * vCollisionNorm.x +
             vRelativeVelocity.y * vCollisionNorm.y;
-          if (speed < 0) return;
+          if (speed <= 0) return;
 
           speed *= RESTITUTION_CONSTANT;
 
@@ -99,14 +104,14 @@ class Ball {
 let balls = [];
 let LAST_TIME = new Date();
 
-while (balls.length < 20) {
-  let radius = random(10, 20);
+while (balls.length < 10) {
+  let radius = 100;
   let ball = new Ball(
     random(0 + radius, width - radius),
     random(0 + radius, height - radius),
-    random(-7, 7),
-    random(-7, 7),
-    `hsl(${random(0, 360)}, 70%, 60%)`,
+    0,
+    0,
+    `hsl(${random(0, 360)}, 50%, 50%)`,
     radius
   );
 
