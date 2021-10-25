@@ -19,13 +19,14 @@ function lerp(start, end, amount) {
 }
 
 class Ball {
-  constructor(x, y, vx, vy, color, r) {
+  constructor(x, y, vx, vy, color, r, mass) {
     this.x = x;
     this.y = y;
     this.vx = vx;
     this.vy = vy;
     this.color = color;
     this.r = r;
+    this.mass = mass;
     this.collide = false;
   }
   draw() {
@@ -34,6 +35,12 @@ class Ball {
     else ctx.fillStyle = this.color;
     ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
     ctx.fill();
+
+    ctx.fillStyle = 'black';
+    ctx.textAlign = 'center';
+    ctx.font = `bold ${this.r}px Arial`;
+    ctx.fillText(this.mass, this.x, this.y + this.r / 2);
+
     this.collide = false;
   }
   update(ELASPED_TIME) {
@@ -61,8 +68,8 @@ class Ball {
 
     this.x += this.vx * ELASPED_TIME;
     this.y += this.vy * ELASPED_TIME;
-    this.vx = lerp(this.vx, 0, FRICTION_CONSTANT);
-    this.vy = lerp(this.vy, 0, FRICTION_CONSTANT);
+    // this.vx = lerp(this.vx, 0, FRICTION_CONSTANT);
+    // this.vy = lerp(this.vy, 0, FRICTION_CONSTANT);
   }
   collisionDetect() {
     for (let i = 0; i < balls.length; i++) {
@@ -91,10 +98,11 @@ class Ball {
 
           speed *= RESTITUTION_CONSTANT;
 
-          this.vx -= speed * vCollisionNorm.x;
-          this.vy -= speed * vCollisionNorm.y;
-          balls[i].vx += speed * vCollisionNorm.x;
-          balls[i].vy += speed * vCollisionNorm.y;
+          let impulse = (2 * speed) / (this.mass + balls[i].mass);
+          this.vx -= impulse * balls[i].mass * vCollisionNorm.x;
+          this.vy -= impulse * balls[i].mass * vCollisionNorm.y;
+          balls[i].vx += impulse * this.mass * vCollisionNorm.x;
+          balls[i].vy += impulse * this.mass * vCollisionNorm.y;
         }
       }
     }
@@ -105,14 +113,15 @@ let balls = [];
 let LAST_TIME = new Date();
 
 while (balls.length < 10) {
-  let radius = 100;
+  let radius = random(25, 100);
   let ball = new Ball(
     random(0 + radius, width - radius),
     random(0 + radius, height - radius),
     0,
     0,
     `hsl(${random(0, 360)}, 50%, 50%)`,
-    radius
+    radius,
+    radius * 5
   );
 
   balls.push(ball);
