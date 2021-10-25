@@ -44,7 +44,7 @@ class Ball {
     this.collide = false;
   }
   update(ELASPED_TIME) {
-    this.vy += GRAVITY_CONSTANT * ELASPED_TIME;
+    this.vy += this.mass * GRAVITY_CONSTANT * ELASPED_TIME;
 
     if (this.x + this.r >= width) {
       this.vx = -this.vx * RESTITUTION_CONSTANT;
@@ -121,7 +121,7 @@ while (balls.length < 10) {
     0,
     `hsl(${random(0, 360)}, 50%, 50%)`,
     radius,
-    radius * 5
+    radius / 100
   );
 
   balls.push(ball);
@@ -147,23 +147,22 @@ function loop() {
 canvas.addEventListener('click', (e) => {
   let x = e.clientX;
   let y = e.clientY;
-  let nearestX = Infinity;
-  let nearestY = Infinity;
+  let nearestDist = Infinity;
   let nearest = undefined;
 
   balls.forEach((ball) => {
-    let diffX = Math.abs(x - ball.x);
-    let diffY = Math.abs(y - ball.y);
-    if (diffX < nearestX && diffY < nearestY) {
-      nearestX = diffX;
-      nearestY = diffY;
+    let diffX = x - ball.x;
+    let diffY = y - ball.y;
+    let dist = diffX * diffX + diffY * diffY;
+    if (dist <= nearestDist) {
+      nearestDist = dist;
       nearest = ball;
     }
   });
 
   if (nearest) {
-    nearest.vx = random(-10, 10);
-    nearest.vy = -1000;
+    nearest.vx = random(-100, 100);
+    nearest.vy = -100;
   }
 });
 
