@@ -33,7 +33,7 @@ class Ball {
     ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
     ctx.fill();
   }
-  update() {
+  update(ELASPED_TIME) {
     if (this.x + this.r >= width) {
       this.vx = -this.vx * RESTITUTION_CONSTANT;
       this.x = width - this.r;
@@ -54,10 +54,10 @@ class Ball {
       this.y = this.r;
     }
 
-    this.vy += 1 * RESTITUTION_CONSTANT;
+    this.vy += GRAVITY_CONSTANT * ELASPED_TIME;
 
-    this.x = lerp(this.x, this.x + this.vx, 0.5);
-    this.y = lerp(this.y, this.y + this.vy, 0.5);
+    this.x = lerp(this.x, this.x + this.vx, ELASPED_TIME);
+    this.y = lerp(this.y, this.y + this.vy, ELASPED_TIME);
     this.vx = lerp(this.vx, 0, FRICTION_CONSTANT);
     this.vy = lerp(this.vy, 0, FRICTION_CONSTANT);
   }
@@ -97,6 +97,7 @@ class Ball {
 }
 
 let balls = [];
+let LAST_TIME = new Date();
 
 while (balls.length < 20) {
   let radius = random(10, 20);
@@ -113,12 +114,16 @@ while (balls.length < 20) {
 }
 
 function loop() {
+  let CURRENT_TIME = new Date();
+  let ELASPED_TIME = (CURRENT_TIME - LAST_TIME) / 100;
+  LAST_TIME = CURRENT_TIME;
+
   ctx.fillStyle = 'hsl(0, 0%, 5%)';
   ctx.fillRect(0, 0, width, height);
 
   for (let i = 0; i < balls.length; i++) {
     balls[i].collisionDetect();
-    balls[i].update();
+    balls[i].update(ELASPED_TIME);
     balls[i].draw();
   }
 
@@ -144,7 +149,7 @@ canvas.addEventListener('click', (e) => {
 
   if (nearest) {
     nearest.vx = random(-10, 10);
-    nearest.vy = random(-10, 10);
+    nearest.vy = -1000;
   }
 });
 
