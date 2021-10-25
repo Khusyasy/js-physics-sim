@@ -7,6 +7,7 @@ const height = (canvas.height = window.innerHeight);
 
 const GRAVITY_CONSTANT = 10;
 const FRICTION_CONSTANT = 0.01;
+const RESTITUTION_CONSTANT = 0.9;
 
 function random(min, max) {
   const num = Math.floor(Math.random() * (max - min + 1)) + min;
@@ -34,22 +35,26 @@ class Ball {
   }
   update() {
     if (this.x + this.r >= width) {
-      this.vx = -this.vx;
+      this.vx = -this.vx * RESTITUTION_CONSTANT;
+      this.x = width - this.r;
     }
 
     if (this.x - this.r <= 0) {
-      this.vx = -this.vx;
+      this.vx = -this.vx * RESTITUTION_CONSTANT;
+      this.x = this.r;
     }
 
     if (this.y + this.r >= height) {
-      this.vy = -this.vy;
-    } else {
-      // this.vy = lerp(this.vy, GRAVITY_CONSTANT, 0.5);
+      this.vy = -this.vy * RESTITUTION_CONSTANT;
+      this.y = height - this.r;
     }
 
     if (this.y - this.r <= 0) {
-      this.vy = -this.vy;
+      this.vy = -this.vy * RESTITUTION_CONSTANT;
+      this.y = this.r;
     }
+
+    this.vy += 1 * RESTITUTION_CONSTANT;
 
     this.x = lerp(this.x, this.x + this.vx, 0.5);
     this.y = lerp(this.y, this.y + this.vy, 0.5);
@@ -79,6 +84,8 @@ class Ball {
             vRelativeVelocity.y * vCollisionNorm.y;
           if (speed < 0) return;
 
+          speed *= RESTITUTION_CONSTANT;
+
           this.vx -= speed * vCollisionNorm.x;
           this.vy -= speed * vCollisionNorm.y;
           balls[i].vx += speed * vCollisionNorm.x;
@@ -91,7 +98,7 @@ class Ball {
 
 let balls = [];
 
-while (balls.length < 100) {
+while (balls.length < 20) {
   let radius = random(10, 20);
   let ball = new Ball(
     random(0 + radius, width - radius),
