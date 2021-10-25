@@ -44,7 +44,7 @@ class Ball {
     if (this.y + this.r >= height) {
       this.vy = -this.vy;
     } else {
-      this.vy = lerp(this.vy, GRAVITY_CONSTANT, 0.5);
+      // this.vy = lerp(this.vy, GRAVITY_CONSTANT, 0.5);
     }
 
     if (this.y - this.r <= 0) {
@@ -63,13 +63,26 @@ class Ball {
         const dy = this.y - balls[i].y;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        if (distance < this.r + balls[i].size) {
-          let tmpX = balls[i].velX;
-          let tmpy = balls[i].velY;
-          balls[i].velX = this.velX;
-          balls[i].velY = this.velY;
-          this.velX = tmpX;
-          this.velY = tmpy;
+        if (distance < this.r + balls[i].r) {
+          let vCollision = { x: balls[i].x - this.x, y: balls[i].y - this.y };
+          let vCollisionNorm = {
+            x: vCollision.x / distance,
+            y: vCollision.y / distance,
+          };
+
+          let vRelativeVelocity = {
+            x: this.vx - balls[i].vx,
+            y: this.vy - balls[i].vy,
+          };
+          let speed =
+            vRelativeVelocity.x * vCollisionNorm.x +
+            vRelativeVelocity.y * vCollisionNorm.y;
+          if (speed < 0) return;
+
+          this.vx -= speed * vCollisionNorm.x;
+          this.vy -= speed * vCollisionNorm.y;
+          balls[i].vx += speed * vCollisionNorm.x;
+          balls[i].vy += speed * vCollisionNorm.y;
         }
       }
     }
