@@ -5,9 +5,9 @@ const ctx = canvas.getContext('2d');
 const width = (canvas.width = window.innerWidth);
 const height = (canvas.height = window.innerHeight);
 
-const GRAVITY_CONSTANT = 10;
+const GRAVITY_CONSTANT = 9.81;
 const FRICTION_CONSTANT = 0.01;
-const RESTITUTION_CONSTANT = 0.9;
+const RESTITUTION_CONSTANT = 0.5;
 
 function random(min, max) {
   const num = Math.floor(Math.random() * (max - min + 1)) + min;
@@ -19,7 +19,7 @@ function lerp(start, end, amount) {
 }
 
 class Ball {
-  constructor(x, y, vx, vy, color, r, mass) {
+  constructor(x, y, vx, vy, color, r, mass, restitution) {
     this.x = x;
     this.y = y;
     this.vx = vx;
@@ -27,6 +27,7 @@ class Ball {
     this.color = color;
     this.r = r;
     this.mass = mass;
+    this.restitution = restitution;
     this.collide = false;
   }
   draw() {
@@ -40,6 +41,13 @@ class Ball {
     ctx.textAlign = 'center';
     ctx.font = `bold ${this.r}px Arial`;
     ctx.fillText(this.mass, this.x, this.y + this.r / 2);
+
+    ctx.beginPath();
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 5;
+    ctx.moveTo(this.x, this.y);
+    ctx.lineTo(this.x + this.vx, this.y + this.vy);
+    ctx.stroke();
 
     this.collide = false;
   }
@@ -71,60 +79,45 @@ class Ball {
     // this.vx = lerp(this.vx, 0, FRICTION_CONSTANT);
     // this.vy = lerp(this.vy, 0, FRICTION_CONSTANT);
   }
-  collisionDetect() {
-    for (let i = 0; i < balls.length; i++) {
-      if (this !== balls[i]) {
-        const dx = this.x - balls[i].x;
-        const dy = this.y - balls[i].y;
+  collisionDetect(GAME_OBJECTS) {
+    for (let i = 0; i < GAME_OBJECTS.length; i++) {
+      if (this !== GAME_OBJECTS[i]) {
+        const dx = this.x - GAME_OBJECTS[i].x;
+        const dy = this.y - GAME_OBJECTS[i].y;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        if (distance <= this.r + balls[i].r) {
+        if (distance <= this.r + GAME_OBJECTS[i].r) {
           this.collide = true;
-          balls[i].collide = true;
-          let vCollision = { x: balls[i].x - this.x, y: balls[i].y - this.y };
+          GAME_OBJECTS[i].collide = true;
+          let vCollision = {
+            x: GAME_OBJECTS[i].x - this.x,
+            y: GAME_OBJECTS[i].y - this.y,
+          };
           let vCollisionNorm = {
             x: vCollision.x / distance,
             y: vCollision.y / distance,
           };
 
           let vRelativeVelocity = {
-            x: this.vx - balls[i].vx,
-            y: this.vy - balls[i].vy,
+            x: this.vx - GAME_OBJECTS[i].vx,
+            y: this.vy - GAME_OBJECTS[i].vy,
           };
           let speed =
             vRelativeVelocity.x * vCollisionNorm.x +
             vRelativeVelocity.y * vCollisionNorm.y;
           if (speed <= 0) return;
 
-          speed *= RESTITUTION_CONSTANT;
+          speed *= Math.min(this.restitution, GAME_OBJECTS[i].restitution);
 
-          let impulse = (2 * speed) / (this.mass + balls[i].mass);
-          this.vx -= impulse * balls[i].mass * vCollisionNorm.x;
-          this.vy -= impulse * balls[i].mass * vCollisionNorm.y;
-          balls[i].vx += impulse * this.mass * vCollisionNorm.x;
-          balls[i].vy += impulse * this.mass * vCollisionNorm.y;
+          let impulse = (2 * speed) / (this.mass + GAME_OBJECTS[i].mass);
+          this.vx -= impulse * GAME_OBJECTS[i].mass * vCollisionNorm.x;
+          this.vy -= impulse * GAME_OBJECTS[i].mass * vCollisionNorm.y;
+          GAME_OBJECTS[i].vx += impulse * this.mass * vCollisionNorm.x;
+          GAME_OBJECTS[i].vy += impulse * this.mass * vCollisionNorm.y;
         }
       }
     }
   }
-}
-
-let balls = [];
-let LAST_TIME = new Date();
-
-while (balls.length < 10) {
-  let radius = random(25, 100);
-  let ball = new Ball(
-    random(0 + radius, width - radius),
-    random(0 + radius, height - radius),
-    0,
-    0,
-    `hsl(${random(0, 360)}, 50%, 50%)`,
-    radius,
-    radius / 100
-  );
-
-  balls.push(ball);
 }
 
 function loop() {
@@ -135,35 +128,35 @@ function loop() {
   ctx.fillStyle = 'hsl(0, 0%, 5%)';
   ctx.fillRect(0, 0, width, height);
 
-  for (let i = 0; i < balls.length; i++) {
-    balls[i].collisionDetect();
-    balls[i].update(ELASPED_TIME);
-    balls[i].draw();
+  for (let i = 0; i < GAME_OBJECTS.length; i++) {
+    GAME_OBJECTS[i].collisionDetect(GAME_OBJECTS);
+    GAME_OBJECTS[i].update(ELASPED_TIME);
+    GAME_OBJECTS[i].draw();
   }
 
   requestAnimationFrame(loop);
 }
 
-canvas.addEventListener('click', (e) => {
-  let x = e.clientX;
-  let y = e.clientY;
-  let nearestDist = Infinity;
-  let nearest = undefined;
+let GAME_OBJECTS = [];
+let LAST_TIME = new Date();
 
-  balls.forEach((ball) => {
-    let diffX = x - ball.x;
-    let diffY = y - ball.y;
-    let dist = diffX * diffX + diffY * diffY;
-    if (dist <= nearestDist) {
-      nearestDist = dist;
-      nearest = ball;
-    }
-  });
+function setup() {
+  while (GAME_OBJECTS.length < 10) {
+    let radius = random(25, 100);
+    let ball = new Ball(
+      random(0 + radius, width - radius),
+      random(0 + radius, height - radius),
+      0,
+      0,
+      `hsl(${random(0, 360)}, 50%, 50%)`,
+      radius,
+      radius / 100,
+      radius / 100
+    );
 
-  if (nearest) {
-    nearest.vx = random(-100, 100);
-    nearest.vy = -100;
+    GAME_OBJECTS.push(ball);
   }
-});
+  requestAnimationFrame(loop);
+}
 
-loop();
+setup();
