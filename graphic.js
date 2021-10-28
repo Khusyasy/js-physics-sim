@@ -9,6 +9,8 @@ const GRAVITY_CONSTANT = 9.81;
 const FRICTION_CONSTANT = 0.01;
 const RESTITUTION_CONSTANT = 0.5;
 
+const FRAMERATE = 60;
+
 class Ball {
   constructor(x, y, vx, vy, color, r, mass, restitution) {
     this.x = x;
@@ -111,25 +113,29 @@ class Ball {
   }
 }
 
-function loop() {
-  let CURRENT_TIME = new Date();
-  let ELASPED_TIME = (CURRENT_TIME - LAST_TIME) / 100;
-  LAST_TIME = CURRENT_TIME;
+let GAME_OBJECTS = [];
+let LAST_TIME = window.performance.now();
 
+function drawLoop() {
   ctx.fillStyle = 'hsl(0, 0%, 5%)';
   ctx.fillRect(0, 0, width, height);
+  for (let i = 0; i < GAME_OBJECTS.length; i++) {
+    GAME_OBJECTS[i].draw();
+  }
+  requestAnimationFrame(drawLoop);
+}
+
+function physicsLoop() {
+  let CURRENT_TIME = window.performance.now();
+  let ELASPED_TIME = (CURRENT_TIME - LAST_TIME) / FRAMERATE;
+  LAST_TIME = CURRENT_TIME;
 
   for (let i = 0; i < GAME_OBJECTS.length; i++) {
     GAME_OBJECTS[i].collisionDetect(GAME_OBJECTS);
     GAME_OBJECTS[i].update(ELASPED_TIME);
-    GAME_OBJECTS[i].draw();
   }
-
-  requestAnimationFrame(loop);
+  setTimeout(physicsLoop, 1000 / (FRAMERATE * 2));
 }
-
-let GAME_OBJECTS = [];
-let LAST_TIME = new Date();
 
 function setup() {
   while (GAME_OBJECTS.length < 10) {
@@ -147,7 +153,8 @@ function setup() {
 
     GAME_OBJECTS.push(ball);
   }
-  requestAnimationFrame(loop);
+  physicsLoop();
+  requestAnimationFrame(drawLoop);
 }
 
 setup();
