@@ -9,15 +9,6 @@ const GRAVITY_CONSTANT = 9.81;
 const FRICTION_CONSTANT = 0.01;
 const RESTITUTION_CONSTANT = 0.5;
 
-function random(min, max) {
-  const num = Math.floor(Math.random() * (max - min + 1)) + min;
-  return num;
-}
-
-function lerp(start, end, amount) {
-  return (1 - amount) * start + amount * end;
-}
-
 class Ball {
   constructor(x, y, vx, vy, color, r, mass, restitution) {
     this.x = x;
