@@ -74,39 +74,42 @@ class Ball {
   }
   collisionDetect(GAME_OBJECTS) {
     for (let i = 0; i < GAME_OBJECTS.length; i++) {
-      if (this !== GAME_OBJECTS[i]) {
-        const dx = this.x - GAME_OBJECTS[i].x;
-        const dy = this.y - GAME_OBJECTS[i].y;
+      const that = GAME_OBJECTS[i];
+      if (this !== that) {
+        const dx = this.x - that.x;
+        const dy = this.y - that.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        if (distance <= this.r + GAME_OBJECTS[i].r) {
+        if (distance <= this.r + that.r) {
           this.collide = true;
-          GAME_OBJECTS[i].collide = true;
-          let vCollision = {
-            x: GAME_OBJECTS[i].x - this.x,
-            y: GAME_OBJECTS[i].y - this.y,
-          };
-          let vCollisionNorm = {
-            x: vCollision.x / distance,
-            y: vCollision.y / distance,
+          that.collide = true;
+
+          let collision = {
+            x: that.x - this.x,
+            y: that.y - this.y,
           };
 
-          let vRelativeVelocity = {
-            x: this.vx - GAME_OBJECTS[i].vx,
-            y: this.vy - GAME_OBJECTS[i].vy,
+          // normalize collision vector
+          collision = {
+            x: collision.x / distance,
+            y: collision.y / distance,
           };
-          let speed =
-            vRelativeVelocity.x * vCollisionNorm.x +
-            vRelativeVelocity.y * vCollisionNorm.y;
-          if (speed <= 0) return;
 
-          speed *= Math.min(this.restitution, GAME_OBJECTS[i].restitution);
+          let relative_v = {
+            x: this.vx - that.vx,
+            y: this.vy - that.vy,
+          };
 
-          let impulse = (2 * speed) / (this.mass + GAME_OBJECTS[i].mass);
-          this.vx -= impulse * GAME_OBJECTS[i].mass * vCollisionNorm.x;
-          this.vy -= impulse * GAME_OBJECTS[i].mass * vCollisionNorm.y;
-          GAME_OBJECTS[i].vx += impulse * this.mass * vCollisionNorm.x;
-          GAME_OBJECTS[i].vy += impulse * this.mass * vCollisionNorm.y;
+          let speed = relative_v.x * collision.x + relative_v.y * collision.y;
+          if (speed <= 0) continue;
+
+          speed *= Math.min(this.restitution, that.restitution);
+
+          let impulse = (2 * speed) / (this.mass + that.mass);
+          this.vx -= impulse * that.mass * collision.x;
+          this.vy -= impulse * that.mass * collision.y;
+          that.vx += impulse * this.mass * collision.x;
+          that.vy += impulse * this.mass * collision.y;
         }
       }
     }
@@ -129,7 +132,6 @@ function physicsLoop() {
   let CURRENT_TIME = window.performance.now();
   let ELASPED_TIME = (CURRENT_TIME - LAST_TIME) / FRAMERATE;
   LAST_TIME = CURRENT_TIME;
-
   for (let i = 0; i < GAME_OBJECTS.length; i++) {
     GAME_OBJECTS[i].collisionDetect(GAME_OBJECTS);
     GAME_OBJECTS[i].update(ELASPED_TIME);
