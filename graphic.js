@@ -73,48 +73,6 @@ class Ball {
     // this.vx = lerp(this.vx, 0, FRICTION_CONSTANT);
     // this.vy = lerp(this.vy, 0, FRICTION_CONSTANT);
   }
-  collisionDetect(GAME_OBJECTS) {
-    for (let i = 0; i < GAME_OBJECTS.length; i++) {
-      const that = GAME_OBJECTS[i];
-      if (this !== that) {
-        const dx = this.x - that.x;
-        const dy = this.y - that.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        if (distance <= this.r + that.r) {
-          this.collide = true;
-          that.collide = true;
-
-          let collision = {
-            x: that.x - this.x,
-            y: that.y - this.y,
-          };
-
-          // normalize collision vector
-          collision = {
-            x: collision.x / distance,
-            y: collision.y / distance,
-          };
-
-          let relative_v = {
-            x: this.vx - that.vx,
-            y: this.vy - that.vy,
-          };
-
-          let speed = relative_v.x * collision.x + relative_v.y * collision.y;
-          if (speed <= 0) continue;
-
-          speed *= Math.min(this.restitution, that.restitution);
-
-          let impulse = (2 * speed) / (this.mass + that.mass);
-          this.vx -= impulse * that.mass * collision.x;
-          this.vy -= impulse * that.mass * collision.y;
-          that.vx += impulse * this.mass * collision.x;
-          that.vy += impulse * this.mass * collision.y;
-        }
-      }
-    }
-  }
 }
 
 let GAME_OBJECTS = [];
@@ -124,15 +82,71 @@ function drawLoop() {
   ctx.fillRect(0, 0, width, height);
   for (let i = 0; i < GAME_OBJECTS.length; i++) {
     GAME_OBJECTS[i].draw();
+    GAME_OBJECTS[i].update(DELTA_TIME);
   }
   requestAnimationFrame(drawLoop);
 }
 
-function physicsLoop() {
-  for (let i = 0; i < GAME_OBJECTS.length; i++) {
-    GAME_OBJECTS[i].collisionDetect(GAME_OBJECTS);
-    GAME_OBJECTS[i].update(DELTA_TIME);
+function collisionDetect(ball_a, ball_b) {
+  const dx = ball_a.x - ball_b.x;
+  const dy = ball_a.y - ball_b.y;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+
+  if (distance <= ball_a.r + ball_b.r) {
+    ball_a.collide = true;
+    ball_b.collide = true;
+    return [ball_a, ball_b];
   }
+  return null;
+}
+
+function collisionResponse(ball_a, ball_b) {
+  const dx = ball_a.x - ball_b.x;
+  const dy = ball_a.y - ball_b.y;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+
+  let collision = {
+    x: ball_b.x - ball_a.x,
+    y: ball_b.y - ball_a.y,
+  };
+
+  // normalize collision vector
+  collision = {
+    x: collision.x / distance,
+    y: collision.y / distance,
+  };
+
+  let relative_v = {
+    x: ball_a.vx - ball_b.vx,
+    y: ball_a.vy - ball_b.vy,
+  };
+
+  let speed = relative_v.x * collision.x + relative_v.y * collision.y;
+  if (speed <= 0) return false;
+
+  speed *= Math.min(ball_a.restitution, ball_b.restitution);
+
+  let impulse = (2 * speed) / (ball_a.mass + ball_b.mass);
+  ball_a.vx -= impulse * ball_b.mass * collision.x;
+  ball_a.vy -= impulse * ball_b.mass * collision.y;
+  ball_b.vx += impulse * ball_a.mass * collision.x;
+  ball_b.vy += impulse * ball_a.mass * collision.y;
+  return true;
+}
+
+function physicsLoop() {
+  const collisions = [];
+  for (let i = 0; i < GAME_OBJECTS.length; i++) {
+    for (let j = 0; j < GAME_OBJECTS.length; j++) {
+      if (i == j) continue;
+      const collision = collisionDetect(GAME_OBJECTS[i], GAME_OBJECTS[j]);
+      if (collision) collisions.push(collision);
+    }
+  }
+  console.log(collisions);
+  collisions.forEach(([ball_a, ball_b]) => {
+    collisionResponse(ball_a, ball_b);
+  });
   setTimeout(physicsLoop, DELTA_TIME * 1000);
 }
 
