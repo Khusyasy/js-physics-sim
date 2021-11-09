@@ -12,50 +12,6 @@ const RESTITUTION_CONSTANT = 0.5;
 let FRAMERATE = 60;
 let DELTA_TIME = 1 / FRAMERATE;
 
-const CollisionFormula = {
-  Ball: {
-    Ball: Ball_Ball_Collision,
-  },
-};
-
-function Ball_Ball_Collision(ball_a, ball_b) {
-  const dx = ball_a.x - ball_b.x;
-  const dy = ball_a.y - ball_b.y;
-  const distance = Math.sqrt(dx * dx + dy * dy);
-
-  if (distance <= ball_a.r + ball_b.r) {
-    ball_a.collide = true;
-    ball_b.collide = true;
-
-    let collision = {
-      x: ball_b.x - ball_a.x,
-      y: ball_b.y - ball_a.y,
-    };
-
-    // normalize collision vector
-    collision = {
-      x: collision.x / distance,
-      y: collision.y / distance,
-    };
-
-    let relative_v = {
-      x: ball_a.vx - ball_b.vx,
-      y: ball_a.vy - ball_b.vy,
-    };
-
-    let speed = relative_v.x * collision.x + relative_v.y * collision.y;
-    if (speed <= 0) return;
-
-    speed *= Math.min(ball_a.restitution, ball_b.restitution);
-
-    let impulse = (2 * speed) / (ball_a.mass + ball_b.mass);
-    ball_a.vx -= impulse * ball_b.mass * collision.x;
-    ball_a.vy -= impulse * ball_b.mass * collision.y;
-    ball_b.vx += impulse * ball_a.mass * collision.x;
-    ball_b.vy += impulse * ball_a.mass * collision.y;
-  }
-}
-
 class Ball {
   constructor(x, y, vx, vy, color, r, mass, restitution) {
     this.x = x;
@@ -121,10 +77,41 @@ class Ball {
     for (let i = 0; i < GAME_OBJECTS.length; i++) {
       const that = GAME_OBJECTS[i];
       if (this !== that) {
-        CollisionFormula[this.constructor.name][that.constructor.name](
-          this,
-          that
-        );
+        const dx = this.x - that.x;
+        const dy = this.y - that.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance <= this.r + that.r) {
+          this.collide = true;
+          that.collide = true;
+
+          let collision = {
+            x: that.x - this.x,
+            y: that.y - this.y,
+          };
+
+          // normalize collision vector
+          collision = {
+            x: collision.x / distance,
+            y: collision.y / distance,
+          };
+
+          let relative_v = {
+            x: this.vx - that.vx,
+            y: this.vy - that.vy,
+          };
+
+          let speed = relative_v.x * collision.x + relative_v.y * collision.y;
+          if (speed <= 0) continue;
+
+          speed *= Math.min(this.restitution, that.restitution);
+
+          let impulse = (2 * speed) / (this.mass + that.mass);
+          this.vx -= impulse * that.mass * collision.x;
+          this.vy -= impulse * that.mass * collision.y;
+          that.vx += impulse * this.mass * collision.x;
+          that.vy += impulse * this.mass * collision.y;
+        }
       }
     }
   }
