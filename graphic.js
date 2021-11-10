@@ -23,6 +23,7 @@ class Ball {
     this.mass = mass;
     this.restitution = restitution;
     this.collide = false;
+    this.debug = false;
   }
   draw() {
     ctx.beginPath();
@@ -38,12 +39,18 @@ class Ball {
 
     ctx.beginPath();
     ctx.strokeStyle = 'white';
-    ctx.lineWidth = 5;
+    ctx.lineWidth = this.r / 10;
     ctx.moveTo(this.x, this.y);
     ctx.lineTo(this.x + this.vx, this.y + this.vy);
     ctx.stroke();
 
     this.collide = false;
+  }
+  debug_draw() {
+    ctx.beginPath();
+    ctx.strokeStyle = 'red';
+    ctx.rect(this.x - this.r, this.y - this.r, this.r * 2, this.r * 2);
+    ctx.stroke();
   }
   update(DELTA_TIME) {
     this.vy += this.mass * GRAVITY_CONSTANT * DELTA_TIME;
@@ -166,8 +173,8 @@ function physicsLoop() {
 }
 
 function setup() {
-  while (GAME_OBJECTS.length < 500) {
-    let radius = random(5, 10);
+  while (GAME_OBJECTS.length < 20) {
+    let radius = random(20, 30);
     let ball = new Ball(
       random(0 + radius, width - radius),
       random(0 + radius, height - radius),
