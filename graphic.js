@@ -136,40 +136,53 @@ function collisionResponse(ball_a, ball_b) {
 
 function physicsLoop() {
   let count = 0;
-  const collisions = [];
+  const possible_collisions = [];
+  const detected_collisions = [];
 
   let sorted_objects = GAME_OBJECTS.sort((a, b) => a.x - b.x);
-  let pruned_objects = new Set();
 
-  let curr = sorted_objects[0];
+  let curr_objects_set = new Set();
+  let curr_objects = [sorted_objects[0]];
+
   sorted_objects.forEach((next) => {
-    count++;
-    if (curr === next) {
-    } else if (Math.abs(next.x - curr.x) <= next.r + curr.r) {
-      if (!pruned_objects.has(curr)) pruned_objects.add(curr);
-      if (!pruned_objects.has(next)) pruned_objects.add(next);
-    } else {
-      curr = next;
+    curr_objects.forEach((c) => {
+      count++;
+      if (c === next) {
+        // skip
+      } else if (Math.abs(next.x - c.x) <= next.r + c.r) {
+        if (!curr_objects_set.has(c)) curr_objects_set.add(c);
+        if (!curr_objects_set.has(next)) curr_objects_set.add(next);
+        curr_objects.push(next);
+      } else {
+        curr_objects = [next];
+      }
+    });
+
+    console.log(count);
+    curr_objects_set = [...curr_objects_set];
+    if (curr_objects_set.length) possible_collisions.push(curr_objects_set);
+    curr_objects_set = new Set();
+  });
+
+  possible_collisions.forEach((collisions) => {
+    for (let i = 0; i < collisions.length; i++) {
+      for (let j = 0; j < collisions.length; j++) {
+        count++;
+        if (i == j) continue;
+        const collision = collisionDetect(collisions[i], collisions[j]);
+        if (collision) detected_collisions.push(collision);
+      }
     }
   });
 
-  pruned_objects = [...pruned_objects];
-  for (let i = 0; i < pruned_objects.length; i++) {
-    for (let j = 0; j < pruned_objects.length; j++) {
-      count++;
-      if (i == j) continue;
-      const collision = collisionDetect(pruned_objects[i], pruned_objects[j]);
-      if (collision) collisions.push(collision);
-    }
-  }
-  collisions.forEach(([ball_a, ball_b]) => {
+  detected_collisions.forEach(([ball_a, ball_b]) => {
     collisionResponse(ball_a, ball_b);
   });
   setTimeout(physicsLoop, DELTA_TIME * 1000);
 }
 
 function setup() {
-  while (GAME_OBJECTS.length < 20) {
+  while (GAME_OBJECTS.length < 10) {
     let radius = random(15, 50);
     let ball = new Ball(
       random(0 + radius, width - radius),
